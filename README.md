@@ -8,7 +8,7 @@ View our [Developer Site](http://developer.teamwork.com/apicomponent) For a list
 Quick Example
 -------------
 
-```
+```CFML
 <cfsetting enablecfoutputonly="No">
 
 <cfset LOCAL.baseHref = "https://yoursite.teamwork.com/">
