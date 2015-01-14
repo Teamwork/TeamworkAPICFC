@@ -808,17 +808,104 @@
 	<cffunction name="getTimeEntries" returntype="struct">
 		<cfargument name="projectId" required="no" type="numeric">
 		<cfargument name="todoItemId" required="no" type="numeric">
+		<cfargument name="page" required="false" type="numeric" />
+		<cfargument name="fromdate" required="false" type="date" />
+		<cfargument name="fromtime" required="false" type="string" />
+		<cfargument name="todate" required="false" type="date" />
+		<cfargument name="totime" required="false" type="string" />
+		<cfargument name="sortorder" required="false" type="string" />
+		<cfargument name="userid" required="false" type="numeric" />
 		
 		<cfset var responseObject = StructNew()>	
+		<cfset var callParams = '' />
+
+		<!--- loop through the arguments --->
+		<cfloop collection="#ARGUMENTS#" item="argn">			
+
+			<!--- switch on the argument name --->
+			<cfswitch expression="#argn#">
+				
+				<!--- check for 'page' argument --->
+				<cfcase value="page">
+					<!--- check that the page value is numeric --->
+					<cfif isNumeric( ARGUMENTS[argn] )>
+						<!--- it is, add it to the params with the appropriate delimiter --->
+						<cfset callParams = callParams & (( len( callParams )) ? '&' : '?') & lCase( argn ) & '=' & Int( ARGUMENTS[argn] ) />						
+					</cfif>
+				</cfcase>
+				
+				<!--- check for 'fromdate' argument --->
+				<cfcase value="fromdate">
+					<!--- check that the fromdate value is a date --->
+					<cfif isDate( ARGUMENTS[argn] )>
+						<!--- it is, add it to the params with the appropriate delimiter --->
+						<cfset callParams = callParams & (( len( callParams )) ? '&' : '?') & lCase( argn ) & '=' & dateFormat( ARGUMENTS[argn], 'YYYYMMDD' ) />						
+					</cfif>
+				</cfcase>
+				
+				<!--- check for 'fromtime' argument --->
+				<cfcase value="fromtime">
+					<!--- check that the fromtime value has length and fromdate argument also exists --->
+					<cfif len( ARGUMENTS[argn] ) AND structKeyExists( ARGUMENTS, "fromdate" )>
+						<!--- it is, add it to the params with the appropriate delimiter --->
+						<cfset callParams = callParams & (( len( callParams )) ? '&' : '?') & lCase( argn ) & '=' & timeFormat( ARGUMENTS[argn], 'HH:mm' ) />						
+					</cfif>
+				</cfcase>
+				
+				<!--- check for 'todate' argument --->
+				<cfcase value="todate">
+					<!--- check that the todate value is a date --->
+					<cfif isDate( ARGUMENTS[argn] )>
+						<!--- it is, add it to the params with the appropriate delimiter --->
+						<cfset callParams = callParams & (( len( callParams )) ? '&' : '?') & lCase( argn ) & '=' & dateFormat( ARGUMENTS[argn], 'YYYYMMDD' ) />						
+					</cfif>
+				</cfcase>
+				
+				<!--- check for 'totime' argument --->
+				<cfcase value="totime">
+					<!--- check that the totime value has length and todate argument also exists --->
+					<cfif len( ARGUMENTS[argn] ) AND structKeyExists( ARGUMENTS, "todate" )>
+						<!--- it is, add it to the params with the appropriate delimiter --->
+						<cfset callParams = callParams & (( len( callParams )) ? '&' : '?') & lCase( argn ) & '=' & timeFormat( ARGUMENTS[argn], 'HH:mm' ) />						
+					</cfif>
+				</cfcase>
+				
+				<!--- check for 'sortorder' argument --->
+				<cfcase value="sortorder">
+					<!--- check that the sortorder value has length and it is a proper value --->
+					<cfif len( ARGUMENTS[argn] ) AND listFindNoCase( 'asc,desc', ARGUMENTS[argn] )>
+						<!--- it is, add it to the params with the appropriate delimiter --->
+						<cfset callParams = callParams & (( len( callParams )) ? '&' : '?') & lCase( argn ) & '=' & uCase( ARGUMENTS[argn] ) />						
+					</cfif>
+				</cfcase>
+				
+				<!--- check for 'userid' argument --->
+				<cfcase value="userid">
+					<!--- check that the userid is numeric --->
+					<cfif isNumeric( ARGUMENTS[argn] )>
+						<!--- it is, add it to the params with the appropriate delimiter --->
+						<cfset callParams = callParams & (( len( callParams )) ? '&' : '?') & lCase( argn ) & '=' & Int( ARGUMENTS[argn] ) />						
+					</cfif>
+				</cfcase>
+
+			<!--- end checking for argument names --->
+			</cfswitch>
+
+		<!--- end looping through arguments --->
+		</cfloop>
 		
 		<cfif StructKeyExists( ARGUMENTS, "projectId" )>
 			<cfset responseObject = this.runAPICall(
-				call = "GET /projects/#ARGUMENTS.projectId#/time_entries.json"
+				call = "GET /projects/#ARGUMENTS.projectId#/time_entries.json#callParams#"
 			)>
 		<cfelseif StructKeyExists( ARGUMENTS, "todoItemId" )>
 			<cfset responseObject = this.runAPICall(
 				call = "GET /todo_items/#ARGUMENTS.todoItemId#/time_entries.json"
 			)>
+		<cfelse>
+			<cfset responseObject = this.runAPICall(
+				call = "GET /time_entries.json#callParams#"
+			)>			
 		</cfif>
 		
 		<cfreturn responseObject>
